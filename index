@@ -437,7 +437,6 @@ P.push({ title:'Reflexión personal', html:
 P.push({ title:'Referencias', html:
   `<h2>Referencias</h2>
    <ul class="refs">
-     <li>Anthropic. Finance Agents.<a href="https://www.anthropic.com/news/finance-agents" target="_blank" rel="noopener noreferrer">https://www.anthropic.com/news/finance-agents</a></li>
      <li>Gestión Libre. Artículo sobre tecnologías emergentes.<a href="https://revistas.unilibre.edu.co/index.php/gestion_libre/article/view/11052/12098" target="_blank" rel="noopener noreferrer">https://revistas.unilibre.edu.co/index.php/gestion_libre/article/view/11052/12098</a></li>
      <li>Economipedia. Nuevas tecnologías.<a href="https://economipedia.com/definiciones/nuevas-tecnologias.html" target="_blank" rel="noopener noreferrer">https://economipedia.com/definiciones/nuevas-tecnologias.html</a></li>
    </ul>` });
