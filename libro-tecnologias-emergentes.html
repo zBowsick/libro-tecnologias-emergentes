@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Tecnologías emergentes en economía y finanzas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&display=swap" rel="stylesheet">
+<style>
+:root{
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+
+  /* mesa */
+  --desk:#dbe1e4; --desk-hi:#eaeeef; --desk-lo:#c3ccd1;
+  --caption:#48575f; --caption-strong:#22303a; --btn-line:#8d9ba3;
+  --btn-bg:#17403e; --btn-ink:#f4f6f5;
+  /* papel y tinta */
+  --paper:#f8f7f3; --edge-a:#d9d6cc; --edge-b:#f3f1ea;
+  --ink:#232b30; --ink-soft:#56616a; --rule:#d3d1c7; --link:#17403e;
+  /* tela y pan de oro */
+  --cloth:#17403e; --cloth-hi:#215854; --cloth-lo:#0f2d2c; --foil:#dcbb67;
+  /* tintas de libro de cuentas */
+  --pos:#1c6a4c; --neg:#a2382f;
+  --flip:1s;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --desk:#161d21; --desk-hi:#212b31; --desk-lo:#0d1215;
+    --caption:#a5b4bb; --caption-strong:#e3eaed; --btn-line:#5b6b73;
+    --btn-bg:#2a6560; --btn-ink:#f4f8f7;
+    --paper:#eceae4; --edge-a:#bfbcb1; --edge-b:#dcd9d0; --rule:#c6c3b8;
+    --cloth:#1a4a47; --cloth-hi:#26625d; --cloth-lo:#102f2d;
+  }
+}
+:root[data-theme="dark"]{
+  --desk:#161d21; --desk-hi:#212b31; --desk-lo:#0d1215;
+  --caption:#a5b4bb; --caption-strong:#e3eaed; --btn-line:#5b6b73;
+  --btn-bg:#2a6560; --btn-ink:#f4f8f7;
+  --paper:#eceae4; --edge-a:#bfbcb1; --edge-b:#dcd9d0; --rule:#c6c3b8;
+  --cloth:#1a4a47; --cloth-hi:#26625d; --cloth-lo:#102f2d;
+}
+@media (prefers-reduced-motion: reduce){ :root{ --flip:.01s; } }
+
+html{ height:100%; scroll-padding-top:env(safe-area-inset-top,0px); }
+*,*::before,*::after{ box-sizing:border-box; }
+body{
+  height:100%; margin:0; display:flex; overflow:auto;
+  background-color:var(--desk);
+  background-image:radial-gradient(ellipse at 50% 45%, var(--desk-hi) 0%, var(--desk) 52%, var(--desk-lo) 100%);
+  color:var(--ink);
+  font-family:'Newsreader', Georgia, 'Times New Roman', serif;
+  font-optical-sizing:auto;
+  --u:calc(var(--pw) / 100);
+}
+body[data-mode="spread"]{ --pw:max(250px, min(calc((100vw - 56px) / 2), calc((100vh - 158px) / 1.4), 560px)); }
+body[data-mode="single"]{ --pw:max(230px, min(calc(100vw - 44px), calc((100vh - 150px) / 1.4), 520px)); }
+@supports (height:100dvh){
+  body[data-mode="spread"]{ --pw:max(250px, min(calc((100vw - 56px) / 2), calc((100dvh - 158px) / 1.4), 560px)); }
+  body[data-mode="single"]{ --pw:max(230px, min(calc(100vw - 44px), calc((100dvh - 150px) / 1.4), 520px)); }
+}
+
+.sr{ position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
+
+.stage{ margin:auto; display:flex; flex-direction:column; align-items:center; gap:22px; padding:18px 0; outline:none; }
+.stage:focus-visible{ outline:2px solid var(--foil); outline-offset:6px; border-radius:6px; }
+
+/* ---------- Libro ---------- */
+.book{
+  position:relative; width:calc(var(--pw) * 2); height:calc(var(--pw) * 1.4);
+  perspective:calc(var(--pw) * 4.2); perspective-origin:50% 40%;
+  transition:transform .95s cubic-bezier(.55,0,.2,1);
+  cursor:pointer; user-select:none; -webkit-user-select:none;
+  -webkit-tap-highlight-color:transparent; touch-action:pan-y;
+}
+body[data-mode="single"] .book{ width:var(--pw); }
+.book.is-start{ transform:translateX(calc(var(--pw) * -.5)); }
+.book.is-end{ transform:translateX(calc(var(--pw) * .5)); }
+body[data-mode="single"] .book{ transform:none; }
+.book.no-anim, .book.no-anim .leaf{ transition:none !important; }
+
+.stack{
+  position:absolute; top:0; width:var(--pw); height:100%;
+  background:var(--edge-a); z-index:0; transition:opacity .5s, box-shadow .6s;
+}
+.stack.r{ left:50%; }
+.stack.l{ left:0; }
+body[data-mode="single"] .stack.r{ left:0; }
+body[data-mode="single"] .stack.l{ display:none; }
+
+.leaf{
+  position:absolute; top:0; left:50%; width:var(--pw); height:100%;
+  transform-origin:left center; transform-style:preserve-3d;
+  transition:transform var(--flip) cubic-bezier(.45,.05,.25,1), visibility 0s;
+  will-change:transform;
+}
+body[data-mode="single"] .leaf{ left:0; }
+.leaf.flipped{ transform:rotateY(-180deg); }
+body[data-mode="single"] .leaf.flipped{
+  visibility:hidden;
+  transition:transform var(--flip) cubic-bezier(.45,.05,.25,1), visibility 0s linear .55s;
+}
+@media (hover:hover){
+  .book.is-start:hover .leaf.first:not(.flipped){ transform:rotateY(-11deg); }
+}
+
+.face{
+  position:absolute; top:0; left:0; width:100%; height:100%;
+  backface-visibility:hidden; -webkit-backface-visibility:hidden;
+}
+.face.back{ transform:rotateY(180deg); }
+
+/* tapas duras: un poco más grandes que las hojas */
+.leaf.hard .face{
+  top:calc(var(--u) * -1.2); height:calc(100% + var(--u) * 2.4); width:calc(100% + var(--u) * 1.8);
+  background:
+    repeating-linear-gradient(0deg, rgba(255,255,255,.035) 0 1px, transparent 1px 3px),
+    repeating-linear-gradient(90deg, rgba(0,0,0,.05) 0 1px, transparent 1px 3px),
+    linear-gradient(135deg, var(--cloth-hi), var(--cloth) 45%, var(--cloth-lo));
+}
+.leaf.hard .face.front{ border-radius:3px 9px 9px 3px; }
+.leaf.hard .face.back{ border-radius:9px 3px 3px 9px; }
+
+/* ---------- Hojas ---------- */
+.sheet{ position:absolute; inset:0; background:var(--paper); }
+.face.front .sheet{ background:linear-gradient(90deg, rgba(0,0,0,.17) 0, rgba(0,0,0,.05) 3.5%, rgba(0,0,0,0) 10%), var(--paper); }
+.face.back .sheet{ background:linear-gradient(270deg, rgba(0,0,0,.17) 0, rgba(0,0,0,.05) 3.5%, rgba(0,0,0,0) 10%), var(--paper); }
+.leaf.hard .face.front .sheet{ inset:calc(var(--u) * 1.2) calc(var(--u) * 1.8) calc(var(--u) * 1.2) 0; box-shadow:0 0 0 1px rgba(0,0,0,.2); }
+.leaf.hard .face.back .sheet{ inset:calc(var(--u) * 1.2) 0 calc(var(--u) * 1.2) calc(var(--u) * 1.8); box-shadow:0 0 0 1px rgba(0,0,0,.2); }
+
+.shade{ position:absolute; inset:0; pointer-events:none; opacity:0; }
+.face.front .shade{ background:linear-gradient(90deg, rgba(0,0,0,.38), rgba(0,0,0,0) 65%); }
+.face.back .shade{ background:linear-gradient(270deg, rgba(0,0,0,.38), rgba(0,0,0,0) 65%); }
+.leaf.turning .shade{ animation:shade var(--flip) ease-in-out; }
+@keyframes shade{ 0%{opacity:0} 45%{opacity:1} 100%{opacity:0} }
+
+.inner{
+  position:absolute; top:calc(var(--u) * 9); bottom:calc(var(--u) * 13);
+  left:calc(var(--u) * 11); right:calc(var(--u) * 8.5);
+  overflow:hidden; color:var(--ink);
+  font-size:calc(var(--u) * 3.8 * var(--fit, 1)); line-height:1.5;
+  hyphens:auto; -webkit-hyphens:auto; text-wrap:pretty;
+}
+.face.back .inner{ left:calc(var(--u) * 8.5); right:calc(var(--u) * 11); }
+.folio{ position:absolute; bottom:calc(var(--u) * 6); font-size:calc(var(--u) * 3.1); color:var(--ink-soft); font-variant-numeric:oldstyle-nums; }
+.face.front .folio{ right:calc(var(--u) * 8.5); }
+.face.back .folio{ left:calc(var(--u) * 8.5); }
+
+.inner h2{ font-size:1.75em; line-height:1.12; font-weight:600; letter-spacing:-.012em; margin:0 0 .65em; text-wrap:balance; }
+.inner p{ margin:0 0 .75em; }
+.inner strong{ font-weight:600; }
+.inner .lead{ font-size:1.42em; line-height:1.42; }
+.inner .sub{ font-style:italic; color:var(--ink-soft); margin:-.35em 0 .9em; }
+.inner .running{ font-style:italic; color:var(--ink-soft); font-size:.9em; margin:0 0 1.1em; }
+.inner .sign-off{ text-align:right; font-style:italic; color:var(--ink-soft); margin-top:1em; }
+
+.entry h3{ font-size:1.22em; line-height:1.2; font-weight:600; margin:0 0 .22em; }
+.entry p{ margin:0; }
+.entry + .entry{ margin-top:1em; padding-top:1em; border-top:1px solid var(--rule); }
+
+.agents p{ font-size:.93em; margin:0 0 .7em; }
+
+/* contenido */
+.toc{ list-style:none; margin:0; padding:0; }
+.toc li{ margin:0 0 .5em; }
+.toc a{ display:flex; align-items:baseline; color:inherit; text-decoration:none; cursor:pointer; }
+.toc a:hover .t{ text-decoration:underline; text-underline-offset:.18em; }
+.toc .dots{ flex:1; min-width:1em; border-bottom:1px dotted var(--ink-soft); margin:0 .5em; transform:translateY(-.25em); }
+.toc .n{ font-variant-numeric:tabular-nums oldstyle-nums; }
+.toc .subitem{ padding-left:1.4em; font-size:.94em; color:var(--ink-soft); }
+
+/* resumen de impactos, en columnas de libro de cuentas */
+.ledger{ display:grid; grid-template-columns:1fr 1fr; margin-top:.3em; }
+.ledger .col{ padding-right:.8em; }
+.ledger .col + .col{ padding:0 0 0 .9em; border-left:.09em solid var(--neg); }
+.ledger h3{ font-size:1.12em; font-weight:600; margin:0 0 .6em; }
+.ledger .pos h3{ color:var(--pos); }
+.ledger .neg h3{ color:var(--neg); }
+.ledger a{ display:flex; justify-content:space-between; gap:.6em; padding:.55em 0; border-bottom:1px solid var(--rule); font-size:.88em; line-height:1.3; color:inherit; text-decoration:none; cursor:pointer; }
+.ledger a:hover span:first-child{ text-decoration:underline; text-underline-offset:.18em; }
+.ledger .n{ font-variant-numeric:tabular-nums oldstyle-nums; color:var(--ink-soft); }
+
+/* páginas de impactos */
+.impact{ display:flex; gap:.7em; align-items:flex-start; margin-bottom:.9em; }
+.impact h2{ font-size:1.4em; line-height:1.16; margin:0; }
+.sign{
+  flex:none; width:2.1em; height:2.1em; margin-top:.1em; border-radius:50%;
+  border:.09em solid currentColor; display:grid; place-items:center; line-height:1; font-size:.95em;
+}
+.impact.pos .sign{ color:var(--pos); }
+.impact.neg .sign{ color:var(--neg); }
+
+.refs{ list-style:none; margin:0; padding:0; }
+.refs li{ margin:0 0 1.1em; }
+.refs a{ display:block; margin-top:.15em; font-size:.8em; line-height:1.35; color:var(--link); overflow-wrap:anywhere; }
+
+/* ---------- Tapas ---------- */
+.cloth{
+  position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:space-between;
+  text-align:center; padding:calc(var(--u) * 12) calc(var(--u) * 9) calc(var(--u) * 11) calc(var(--u) * 12);
+}
+.face.back .cloth{ padding-left:calc(var(--u) * 9); padding-right:calc(var(--u) * 12); }
+.cloth::before{ content:""; position:absolute; top:0; bottom:0; width:7%; pointer-events:none; }
+.face.front .cloth::before{ left:0; background:linear-gradient(90deg, rgba(0,0,0,.42) 0 1.6%, rgba(255,255,255,.09) 2.4%, rgba(0,0,0,.26) 4.4%, rgba(0,0,0,0) 100%); }
+.face.back .cloth::before{ right:0; background:linear-gradient(270deg, rgba(0,0,0,.42) 0 1.6%, rgba(255,255,255,.09) 2.4%, rgba(0,0,0,.26) 4.4%, rgba(0,0,0,0) 100%); }
+.cloth .frame{ position:absolute; inset:calc(var(--u) * 5) calc(var(--u) * 6) calc(var(--u) * 5) calc(var(--u) * 10); border:1px solid var(--foil); opacity:.5; pointer-events:none; }
+.face.back .cloth .frame{ inset:calc(var(--u) * 5) calc(var(--u) * 10) calc(var(--u) * 5) calc(var(--u) * 6); }
+.foil{
+  color:var(--foil);
+  background:linear-gradient(100deg, #b58a3f 5%, #f3e0a0 32%, #c9a04e 52%, #f6e7b0 72%, #b58a3f 95%);
+  -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+}
+.emblem{ width:calc(var(--u) * 21); height:calc(var(--u) * 21); color:var(--foil); }
+.c-title{ margin:0; font-size:calc(var(--u) * 8.6); font-weight:500; line-height:1.07; letter-spacing:-.01em; text-wrap:balance; }
+.c-authors{ margin:0; font-size:calc(var(--u) * 4.1); font-style:italic; line-height:1.4; }
+.c-small{ margin:0; font-size:calc(var(--u) * 3.6); font-style:italic; line-height:1.3; }
+
+/* ---------- Controles ---------- */
+.controls{ display:flex; align-items:center; justify-content:center; gap:14px; color:var(--caption); font-size:15px; }
+.where{ min-width:9.5em; text-align:center; font-variant-numeric:tabular-nums; }
+.btn{
+  font:inherit; font-size:15px; color:var(--caption-strong); background:transparent;
+  border:1px solid var(--btn-line); border-radius:999px; padding:.5em 1.15em; cursor:pointer;
+}
+.btn.solid{ background:var(--btn-bg); border-color:var(--btn-bg); color:var(--btn-ink); }
+.btn:hover:not(:disabled){ filter:brightness(1.12); }
+.btn:disabled{ opacity:.4; cursor:default; }
+.btn:focus-visible{ outline:2px solid var(--foil); outline-offset:3px; }
+.hint{ margin:-6px 0 0; min-height:1.4em; font-style:italic; font-size:14px; color:var(--caption); text-align:center; max-width:36em; padding:0 16px; }
+
+@media (max-width:480px){
+  .controls{ gap:8px; }
+  .btn{ padding:.5em .9em; }
+  .where{ min-width:7.5em; }
+}
+</style>
+</head>
+<body data-mode="spread">
+
+<main class="stage" id="stage" tabindex="0" role="region" aria-roledescription="libro"
+      aria-label="Libro: Tecnologías emergentes en economía y finanzas">
+  <div class="book" id="book"></div>
+  <div class="controls">
+    <button type="button" class="btn" id="prev">Anterior</button>
+    <span class="where" id="where" aria-hidden="true">Portada</span>
+    <button type="button" class="btn solid" id="next">Abrir el libro</button>
+  </div>
+  <p class="hint" id="hint"></p>
+</main>
+<div class="sr" id="live" aria-live="polite"></div>
+<noscript><p style="padding:24px">Esta página necesita JavaScript para mostrar el libro.</p></noscript>
+
+<script>
+(function(){
+'use strict';
+
+const body = document.body;
+const book = document.getElementById('book');
+const stage = document.getElementById('stage');
+const btnPrev = document.getElementById('prev');
+const btnNext = document.getElementById('next');
+const where = document.getElementById('where');
+const hint = document.getElementById('hint');
+const live = document.getElementById('live');
+
+const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const FLIP_MS = reduceMotion ? 60 : 1000;
+
+/* ============ Contenido del libro (tomado del documento) ============ */
+
+const emblem = `<svg class="emblem" viewBox="0 0 100 100" aria-hidden="true">
+  <circle cx="50" cy="50" r="44" fill="none" stroke="currentColor" stroke-width="1.6"/>
+  <circle cx="50" cy="50" r="39" fill="none" stroke="currentColor" stroke-width=".6"/>
+  <path d="M20 66 L36 50 L50 57 L66 36 L80 26" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+  <g fill="currentColor"><circle cx="20" cy="66" r="3"/><circle cx="36" cy="50" r="3"/><circle cx="50" cy="57" r="3"/><circle cx="66" cy="36" r="3"/><circle cx="80" cy="26" r="3.6"/></g>
+  <g stroke="currentColor" stroke-width="1" fill="none"><path d="M36 53 V74 H28"/><path d="M50 60 V78"/><path d="M66 39 V70 H74"/></g>
+  <g fill="currentColor"><circle cx="27" cy="74" r="1.6"/><circle cx="50" cy="79" r="1.6"/><circle cx="75" cy="70" r="1.6"/></g>
+</svg>`;
+
+const impact = (kind, title, text) =>
+  `<div class="impact ${kind}"><span class="sign" aria-hidden="true">${kind === 'pos' ? '+' : '−'}</span>` +
+  `<h2><span class="sr">${kind === 'pos' ? 'Impacto positivo: ' : 'Impacto negativo: '}</span>${title}</h2></div><p>${text}</p>`;
+
+const tocLine = (t, p, sub) =>
+  `<li><a href="#" data-goto="${p}" class="${sub ? 'subitem' : ''}"><span class="t">${t}</span><span class="dots"></span><span class="n">${p}</span></a></li>`;
+
+const P = [];
+
+/* 0 · Portada */
+P.push({ type:'cover', title:'Portada', html:
+  `<div class="frame"></div>
+   ${emblem}
+   <h1 class="foil c-title">Tecnologías emergentes en economía y finanzas</h1>
+   <p class="foil c-authors">Camila Cala<br>Santiago Sanchez</p>` });
+
+/* 1 · Contenido */
+P.push({ title:'Contenido', html:
+  `<h2>Contenido</h2>
+   <ul class="toc">
+     ${tocLine('¿Qué son?', 2)}
+     ${tocLine('Características', 3)}
+     ${tocLine('Ejemplos', 4)}
+     ${tocLine('¿Por qué se usan?', 5)}
+     ${tocLine('Impacto e influencia empresarial', 6)}
+     ${tocLine('Agentes financieros de Anthropic', 8)}
+     ${tocLine('Impactos', 10)}
+     ${tocLine('Impactos positivos', 11, true)}
+     ${tocLine('Impactos negativos', 15, true)}
+     ${tocLine('Reflexión personal', 19)}
+     ${tocLine('Referencias', 20)}
+   </ul>` });
+
+/* 2 · ¿Qué son? */
+P.push({ title:'¿Qué son?', html:
+  `<h2>¿Qué son?</h2>
+   <p class="lead">Son innovaciones científicas y técnicas en rápido desarrollo que buscan transformar la sociedad y la economía al ofrecer soluciones completamente nuevas o mejorar de forma radical los procesos tradicionales.</p>` });
+
+/* 3 · Características */
+P.push({ title:'Características', html:
+  `<h2>Características</h2>
+   <div class="entry"><h3>Novedad</h3><p>Son tecnologías nuevas o que están desarrollando formas diferentes de hacer las cosas.</p></div>
+   <div class="entry"><h3>Crecimiento rápido</h3><p>Se desarrollan y adoptan rápidamente, aumentando su presencia en poco tiempo.</p></div>
+   <div class="entry"><h3>Impacto prominente</h3><p>Pueden generar cambios importantes en la economía, las empresas y la sociedad.</p></div>
+   <div class="entry"><h3>Incertidumbre</h3><p>Todavía no se sabe con certeza cómo evolucionarán, qué tan exitosas serán o qué consecuencias tendrán.</p></div>` });
+
+/* 4 · Ejemplos */
+P.push({ title:'Ejemplos', html:
+  `<h2>Ejemplos</h2>
+   <div class="entry"><h3>Inteligencia artificial (IA)</h3><p>La más famosa de todas. Esta tecnología se basa en aprender, analizar información y tomar decisiones de manera similar a los humanos.</p></div>
+   <div class="entry"><h3>Automatización de procesos</h3><p>Consiste en utilizar tecnología para realizar tareas automáticamente, reduciendo la necesidad de intervención humana.</p></div>
+   <div class="entry"><h3>Realidad virtual (RV)</h3><p>Es una tecnología que crea un entorno completamente digital en el que la persona puede sentirse inmersa utilizando dispositivos como gafas de realidad virtual. Es una tecnología que añade elementos digitales al mundo real, normalmente a través de un celular, tablet o gafas.</p></div>` });
+
+/* 5 · ¿Por qué se usan…? */
+P.push({ title:'¿Por qué se usan en economía y finanzas?', html:
+  `<h2>¿Por qué se usan las tecnologías emergentes en economía y finanzas?</h2>
+   <p>Hoy en día, las empresas se preocupan por disponer de herramientas tecnológicas que permitan medir continuamente los procesos internos y realizar los ajustes pertinentes de acuerdo con las metas planeadas.</p>
+   <p>En el contexto organizacional actual, las compañías se han visto confrontadas con retos continuos para preservar su competitividad y ajustarse a los cambios rápidos en el mercado.</p>` });
+
+/* 6 · Impacto e influencia empresarial (1) */
+P.push({ title:'Impacto e influencia empresarial', html:
+  `<h2>Impacto e influencia empresarial</h2>
+   <p>Las tecnologías emergentes surgieron como herramientas estratégicas que permitieron a las empresas impulsar la innovación y alcanzar una ventaja competitiva sostenible.</p>
+   <p>Estas tecnologías también demostraron su capacidad para transformar los modelos de negocio, mejorar la eficiencia operativa y potenciar la experiencia del cliente.</p>` });
+
+/* 7 · Impacto e influencia empresarial (2) */
+P.push({ title:'Impacto e influencia empresarial, continuación', html:
+  `<p class="running">Impacto e influencia empresarial (continuación)</p>
+   <p>La implementación de herramientas emergentes fue de suma importancia, ya que aportaron beneficios y se consideraron un eje importante para aumentar el rendimiento y la utilidad, con sus aportes en el control administrativo, el manejo de tecnologías y el registro de los empleados o productos.</p>
+   <p>Por ello, su utilización permite mejorar el emprendimiento dentro de las organizaciones e impactar directamente en ellas. Asimismo, se puede observar cómo las organizaciones han elegido el uso de novedosas metodologías, técnicas y procedimientos con el propósito de aumentar el rendimiento.</p>` });
+
+/* 8 · Agentes financieros (1) */
+P.push({ title:'Ejemplo: agentes financieros de Anthropic', html:
+  `<h2>Ejemplo: agentes financieros de Anthropic</h2>
+   <p class="sub">Investigación y cobertura de clientes</p>
+   <div class="agents">
+     <p><strong>Creador de presentaciones.</strong> Genera listas de clientes potenciales, realiza análisis comparativos y redacta documentos de presentación para reuniones con clientes.</p>
+     <p><strong>Encargado de preparar las reuniones.</strong> Reúne los informes para clientes y contrapartes antes de las llamadas.</p>
+     <p><strong>Revisor de ganancias.</strong> Lee las transcripciones y los documentos presentados, actualiza los modelos y señala los cambios relevantes para la tesis.</p>
+     <p><strong>Creador de modelos.</strong> Crea y mantiene modelos financieros a partir de informes, flujos de datos y aportaciones de analistas.</p>
+     <p><strong>Analista de mercado.</strong> Realiza un seguimiento de la evolución del sector y de los emisores, sintetiza noticias, documentos presentados ante los medios y análisis de los corredores de bolsa, e identifica los elementos que requieren revisión crediticia y de riesgo.</p>
+   </div>` });
+
+/* 9 · Agentes financieros (2) */
+P.push({ title:'Agentes financieros: finanzas y operaciones', html:
+  `<h2>Finanzas y operaciones</h2>
+   <p class="sub">Agentes financieros de Anthropic</p>
+   <div class="agents">
+     <p><strong>Revisor de valoraciones.</strong> Compara las valoraciones con las de activos comparables, la metodología empleada y los estándares de revisión de la empresa.</p>
+     <p><strong>Conciliador de cuentas generales.</strong> Concilia las cuentas del libro mayor y realiza cálculos del valor neto de los activos comparándolos con los libros de registro.</p>
+     <p><strong>Encargado del cierre de mes.</strong> Ejecuta la lista de verificación de cierre, prepara los asientos contables y elabora los informes de cierre.</p>
+     <p><strong>Auditor de estados financieros.</strong> Revisa los estados financieros para verificar su coherencia, integridad y preparación para la auditoría.</p>
+     <p><strong>Sistema de verificación KYC.</strong> Recopila los archivos de las entidades, revisa los documentos fuente y prepara los paquetes para su revisión de cumplimiento.</p>
+   </div>` });
+
+/* 10 · Impactos (resumen) */
+P.push({ title:'Impactos', html:
+  `<h2>Impactos</h2>
+   <div class="ledger">
+     <div class="col pos"><h3>Positivos</h3>
+       <a href="#" data-goto="11"><span>Productividad y eficiencia</span><span class="n">11</span></a>
+       <a href="#" data-goto="12"><span>Empleos calificados</span><span class="n">12</span></a>
+       <a href="#" data-goto="13"><span>Menores costos de transacción</span><span class="n">13</span></a>
+       <a href="#" data-goto="14"><span>Recursos y sostenibilidad</span><span class="n">14</span></a>
+     </div>
+     <div class="col neg"><h3>Negativos</h3>
+       <a href="#" data-goto="15"><span>Desplazamiento laboral</span><span class="n">15</span></a>
+       <a href="#" data-goto="16"><span>Brecha digital</span><span class="n">16</span></a>
+       <a href="#" data-goto="17"><span>Polarización salarial</span><span class="n">17</span></a>
+       <a href="#" data-goto="18"><span>Economía de plataformas</span><span class="n">18</span></a>
+     </div>
+   </div>` });
+
+/* 11–14 · Impactos positivos */
+P.push({ title:'Impacto positivo: productividad y eficiencia', html: impact('pos',
+  'Aumento de la productividad laboral y la eficiencia de los procesos',
+  'Las tecnologías cognitivas y de sensorización permiten a las empresas optimizar sus operaciones diarias, acelerar la toma de decisiones y reducir costos operativos. A nivel microeconómico, el <strong>80%</strong> de los profesionales que interactúan con herramientas de IA reporta mejoras significativas en su productividad individual. En el caso del IoT, la optimización de entornos físicos (como las fábricas inteligentes) generaría una inyección económica global de entre <strong>5.5 y 12.6 billones de dólares</strong> para el año 2030.') });
+
+P.push({ title:'Impacto positivo: empleos calificados', html: impact('pos',
+  'Generación de nuevos empleos calificados y sofisticación técnica',
+  'La automatización no solo sustituye, sino que también genera una demanda de nuevas capacidades. Por ejemplo, entre 2018 y 2022, la adopción de robots industriales en cinco economías de la ASEAN impulsó la creación de <strong>2 millones de empleos</strong> para personal calificado en áreas de programación, diseño y gestión técnica. En América Latina, las inversiones en software y servicios de TI concentraron el <strong>36%</strong> de los empleos anunciados por inversión extranjera directa digital entre 2005 y 2024, consolidándose como un motor clave de empleo formal y especializado.') });
+
+P.push({ title:'Impacto positivo: menores costos de transacción', html: impact('pos',
+  'Reducción de costos de transacción y desintermediación de los mercados (blockchain)',
+  'Al utilizar un registro descentralizado y seguro, la tecnología blockchain y los contratos inteligentes permiten transferir y autenticar activos digitales sin necesidad de intermediarios centralizados. Esto reduce drásticamente los costos de búsqueda, negociación y cumplimiento contractual. Para la economía, esto disminuye las barreras impuestas por las economías de escala tradicionales, permitiendo a las pequeñas y medianas empresas (pymes) de mercados emergentes insertarse competitivamente en el comercio digital internacional y mejorar la inclusión financiera.') });
+
+P.push({ title:'Impacto positivo: recursos y sostenibilidad', html: impact('pos',
+  'Optimización de recursos físicos y sostenibilidad ambiental',
+  'La convergencia de la IA y el IoT posibilita la digitalización e interconexión de infraestructuras críticas (electricidad, agricultura, transporte) para gestionar recursos de forma más eficiente. La implementación de estas soluciones de «fábricas o agricultura inteligentes» permite, por ejemplo, reducir las emisiones globales de dióxido de carbono en un <strong>15%</strong> para 2030, optimizar el riego, aumentar el rendimiento agrícola en un <strong>30%</strong> y mitigar riesgos ambientales a escala macroeconómica.') });
+
+/* 15–18 · Impactos negativos */
+P.push({ title:'Impacto negativo: desplazamiento laboral', html: impact('neg',
+  'Desplazamiento laboral de operarios manuales en tareas rutinarias',
+  'Las máquinas inteligentes, los robots y la automatización de procesos son altamente eficientes para sustituir tareas físicas o repetitivas. Aunque esto genera empleos técnicos, también provoca una gran disrupción en la base de la pirámide laboral: en el caso estudiado de la ASEAN, la adopción de robots desplazó a <strong>1.4 millones</strong> de operarios manuales de manufactura. Los trabajadores afectados (generalmente de mayor edad y con menor flexibilidad de reconversión) suelen verse obligados a desplazarse hacia empleos peor remunerados y más inseguros en el sector informal.') });
+
+P.push({ title:'Impacto negativo: brecha digital', html: impact('neg',
+  'Profundización de la brecha digital y divergencia económica global',
+  'Para asimilar los retornos de tecnologías como la IA, se requiere una costosa base de conectividad, datos y capacidad de procesamiento que los países pobres no poseen. Al año 2025, los países de ingresos altos concentran el <strong>77%</strong> de la capacidad de servidores y cómputo global, frente a menos del <strong>0.1%</strong> en los países de ingresos bajos. Esta disparidad perpetúa un escenario donde los países ricos aceleran su productividad mientras que los países en desarrollo quedan rezagados como simples consumidores pasivos, arriesgando una exclusión estructural de la revolución cognitiva.') });
+
+P.push({ title:'Impacto negativo: polarización salarial', html: impact('neg',
+  'Polarización salarial e incremento de la desigualdad de ingresos',
+  'La demanda laboral se desplaza rápidamente de tareas rutinarias hacia roles cognitivos sofisticados que requieren altas competencias digitales. Esto eleva los salarios del personal calificado mientras estanca o disminuye los de los trabajadores con bajas competencias digitales. Se proyecta que para 2030, la masa salarial correspondiente a empleos de baja calificación digital caerá del <strong>33%</strong> al <strong>20%</strong> del total global. En regiones como América Latina, esta brecha educativa se traduce en que la probabilidad de poder trabajar desde casa (teletrabajo) sea del <strong>73%</strong> para el personal de alta educación, pero de apenas el <strong>4%</strong> para personas con educación baja.') });
+
+P.push({ title:'Impacto negativo: economía de plataformas', html: impact('neg',
+  'Precarización y desprotección en la economía de plataformas (gig economy)',
+  'El auge de las plataformas de entrega y servicios digitales ha expandido un modelo laboral de ocupaciones transitorias. No obstante, debido a la ausencia de regulaciones laborales específicas en muchos países, estos repartidores y conductores operan sin acceso a sistemas de seguridad social, seguros de desempleo ni derechos laborales garantizados. Esto incrementa la vulnerabilidad y la informalidad dentro de un mercado laboral que ya es estructuralmente inestable.') });
+
+/* 19 · Reflexión personal */
+P.push({ title:'Reflexión personal', html:
+  `<h2>Reflexión personal</h2>
+   <p>Consideramos que las tecnologías emergentes representan una gran oportunidad para la economía y las finanzas, ya que permiten aumentar la productividad, reducir costos y hacer más eficientes los procesos empresariales. Además, herramientas como la inteligencia artificial, la automatización y el blockchain pueden facilitar el análisis financiero, la toma de decisiones y la inclusión de más personas y empresas en los mercados.</p>
+   <p>En nuestra opinión, su desarrollo puede contribuir a una economía más innovadora, eficiente y competitiva. Sin embargo, también pueden generar problemas como el desplazamiento laboral y una mayor desigualdad. Por eso, debemos aprender a adaptarnos a estos cambios y aprovechar la tecnología de manera responsable, buscando que sus beneficios lleguen a más personas.</p>
+   <p class="sign-off">Camila Cala y Santiago Sanchez</p>` });
+
+/* 20 · Referencias */
+P.push({ title:'Referencias', html:
+  `<h2>Referencias</h2>
+   <ul class="refs">
+     <li>Anthropic. Finance Agents.<a href="https://www.anthropic.com/news/finance-agents" target="_blank" rel="noopener noreferrer">https://www.anthropic.com/news/finance-agents</a></li>
+     <li>Gestión Libre. Artículo sobre tecnologías emergentes.<a href="https://revistas.unilibre.edu.co/index.php/gestion_libre/article/view/11052/12098" target="_blank" rel="noopener noreferrer">https://revistas.unilibre.edu.co/index.php/gestion_libre/article/view/11052/12098</a></li>
+     <li>Economipedia. Nuevas tecnologías.<a href="https://economipedia.com/definiciones/nuevas-tecnologias.html" target="_blank" rel="noopener noreferrer">https://economipedia.com/definiciones/nuevas-tecnologias.html</a></li>
+   </ul>` });
+
+/* 21 · Contraportada */
+P.push({ type:'back', title:'Contraportada', html:
+  `<div class="frame"></div>
+   <span></span>
+   ${emblem}
+   <p class="foil c-small">Tecnologías emergentes<br>en economía y finanzas</p>` });
+
+P.forEach((p, i) => { if (!p.type) p.folio = i; });
+const N_PAGES = P.length;           // 22 caras: portada + 20 páginas + contraportada
+const CONTENT_PAGES = N_PAGES - 2;
+
+/* ============ Motor del libro ============ */
+
+let mode = 'spread';
+let leaves = [];
+let L = 0;          // número de hojas físicas
+let max = 0;        // estado máximo
+let s = 0;          // hojas volteadas
+let stackL = null, stackR = null;
+let cascade = null;
+let lastFlip = 0;
+let swiped = false;
+
+const decideMode = () => (window.innerWidth >= 700 && window.innerHeight >= 480) ? 'spread' : 'single';
+
+function el(tag, cls, html){
+  const d = document.createElement(tag);
+  if (cls) d.className = cls;
+  if (html != null) d.innerHTML = html;
+  return d;
+}
+
+function makeFace(page, side){
+  const f = el('div', 'face ' + side);
+  if (page && (page.type === 'cover' || page.type === 'back')){
+    f.innerHTML = `<div class="cloth">${page.html}<div class="shade"></div></div>`;
+  } else if (page){
+    f.innerHTML = `<div class="sheet"><div class="inner">${page.html}</div><div class="folio">${page.folio}</div><div class="shade"></div></div>`;
+  } else {
+    f.innerHTML = `<div class="sheet"><div class="shade"></div></div>`;
+  }
+  return f;
+}
+
+function build(){
+  book.textContent = '';
+  leaves = [];
+  stackL = el('div', 'stack l');
+  stackR = el('div', 'stack r');
+  book.append(stackL, stackR);
+
+  L = mode === 'spread' ? N_PAGES / 2 : N_PAGES;
+  max = mode === 'spread' ? L : N_PAGES - 1;
+
+  for (let k = 0; k < L; k++){
+    const front = mode === 'spread' ? P[2 * k] : P[k];
+    const back  = mode === 'spread' ? P[2 * k + 1] : null;
+    const leaf = el('div', 'leaf' + ((k === 0 || k === L - 1) ? ' hard' : '') + (k === 0 ? ' first' : ''));
+    const ff = makeFace(front, 'front');
+    const bf = makeFace(back, 'back');
+    leaf.append(ff, bf);
+    book.appendChild(leaf);
+    leaves.push({ el: leaf, front: ff, back: bf, busy: false, t: 0 });
+  }
+  fitAll();
+}
+
+const zFinal = (i, flipped) => flipped ? i + 1 : L - i;
+
+function setStack(node, count, dir){
+  const k = count === 0 ? 0 : Math.max(1, Math.round(count / L * 6));
+  const parts = [];
+  for (let j = 1; j <= k; j++){
+    parts.push(`calc(var(--u) * ${(dir * j * 0.24).toFixed(3)}) calc(var(--u) * ${(j * 0.17).toFixed(3)}) 0 ${j % 2 ? 'var(--edge-a)' : 'var(--edge-b)'}`);
+  }
+  parts.push(`calc(var(--u) * ${(dir * (k * 0.24 + 0.4)).toFixed(3)}) calc(var(--u) * 2.4) calc(var(--u) * 3.4) calc(var(--u) * -.6) rgba(10,20,25,.42)`);
+  node.style.boxShadow = parts.join(',');
+  node.style.opacity = count === 0 ? 0 : 1;
+}
+
+function apply(anim){
+  leaves.forEach((lf, i) => {
+    const flipped = i < s;
+    const was = lf.el.classList.contains('flipped');
+    if (was !== flipped){
+      lf.el.classList.toggle('flipped', flipped);
+      if (anim){
+        clearTimeout(lf.t);
+        lf.busy = true;
+        lf.el.style.zIndex = 3 * L + 2 - i;
+        lf.el.classList.add('turning');
+        lf.t = setTimeout(() => {
+          lf.busy = false;
+          lf.el.classList.remove('turning');
+          lf.el.style.zIndex = zFinal(i, lf.el.classList.contains('flipped'));
+        }, FLIP_MS);
+        return;
+      }
+    }
+    if (!lf.busy || !anim){
+      lf.el.style.zIndex = zFinal(i, flipped);
+    }
+  });
+
+  setStack(stackR, L - s, 1);
+  setStack(stackL, s, -1);
+  book.classList.toggle('is-start', mode === 'spread' && s === 0);
+  book.classList.toggle('is-end', mode === 'spread' && s === max);
+  syncA11y();
+  updateUI();
+}
+
+function setVisible(face, v){
+  face.inert = !v;
+  face.setAttribute('aria-hidden', v ? 'false' : 'true');
+}
+function syncA11y(){
+  leaves.forEach((lf, i) => {
+    if (mode === 'spread'){
+      setVisible(lf.front, i === s);
+      setVisible(lf.back, i === s - 1);
+    } else {
+      setVisible(lf.front, i === s);
+      setVisible(lf.back, false);
+    }
+  });
+}
+
+function updateUI(){
+  let label, liveText;
+  if (s === 0){
+    label = 'Portada'; liveText = 'Portada. Tecnologías emergentes en economía y finanzas.';
+    btnNext.textContent = 'Abrir el libro';
+  } else if (s === max){
+    label = 'Contraportada'; liveText = 'Contraportada.';
+    btnNext.textContent = 'Volver a la portada';
+  } else if (mode === 'spread'){
+    label = `Páginas ${2 * s - 1} y ${2 * s} de ${CONTENT_PAGES}`;
+    liveText = `${label}: ${P[2 * s - 1].title} y ${P[2 * s].title}.`;
+    btnNext.textContent = 'Siguiente';
+  } else {
+    label = `Página ${s} de ${CONTENT_PAGES}`;
+    liveText = `${label}: ${P[s].title}.`;
+    btnNext.textContent = 'Siguiente';
+  }
+  where.textContent = label;
+  live.textContent = liveText;
+  btnPrev.disabled = s === 0;
+
+  const touch = mode === 'single';
+  if (s === 0)        hint.textContent = touch ? 'Toca el libro para abrirlo.' : 'Haz clic en el libro para abrirlo.';
+  else if (s === max) hint.textContent = touch ? 'Toca para volver a la portada.' : 'Haz clic para volver a la portada.';
+  else hint.textContent = touch
+      ? 'Toca la página para avanzar o el borde izquierdo para volver.'
+      : 'Haz clic en la página derecha para avanzar y en la izquierda para volver.';
+}
+
+function step(dir){ s += dir; apply(true); }
+
+function goTo(target){
+  target = Math.max(0, Math.min(max, target));
+  clearInterval(cascade);
+  if (target === s) return;
+  const dir = Math.sign(target - s);
+  const dist = Math.abs(target - s);
+  step(dir);
+  if (dist > 1){
+    let left = dist - 1;
+    const gap = Math.max(90, Math.min(200, 1300 / dist));
+    cascade = setInterval(() => {
+      step(dir);
+      if (--left <= 0) clearInterval(cascade);
+    }, gap);
+  }
+}
+
+function go(d){
+  if (d > 0 && s === max) return goTo(0);
+  goTo(s + d);
+}
+
+const pageOfState = st => mode === 'spread' ? (st === 0 ? 0 : st === max ? N_PAGES - 1 : 2 * st) : st;
+const stateOfPage = p => mode === 'spread' ? (p === 0 ? 0 : p === N_PAGES - 1 ? max : Math.ceil(p / 2)) : p;
+
+/* ---- Ajuste de texto: si una página se desborda, reduce su tipografía ---- */
+function fitAll(){
+  book.querySelectorAll('.inner').forEach(node => {
+    let f = 1;
+    node.style.setProperty('--fit', f);
+    while (node.scrollHeight > node.clientHeight + 1 && f > 0.72){
+      f = +(f - 0.02).toFixed(2);
+      node.style.setProperty('--fit', f);
+    }
+  });
+}
+
+/* ============ Interacción ============ */
+
+book.addEventListener('click', e => {
+  if (swiped){ swiped = false; return; }
+  const g = e.target.closest('[data-goto]');
+  if (g){
+    e.preventDefault(); e.stopPropagation();
+    goTo(stateOfPage(+g.dataset.goto));
+    return;
+  }
+  if (e.target.closest('a')) return;
+
+  const now = performance.now();
+  if (now - lastFlip < 200) return;
+  lastFlip = now;
+
+  if (s === 0) return goTo(1);
+  if (s === max) return goTo(0);
+  const r = book.getBoundingClientRect();
+  const goBack = mode === 'spread'
+    ? e.clientX < r.left + r.width / 2
+    : e.clientX < r.left + r.width * 0.22;
+  goTo(goBack ? s - 1 : s + 1);
+});
+
+let sx = 0, sy = 0, tracking = false;
+book.addEventListener('pointerdown', e => {
+  if (e.pointerType === 'mouse') return;
+  sx = e.clientX; sy = e.clientY; tracking = true;
+});
+book.addEventListener('pointerup', e => {
+  if (!tracking) return;
+  tracking = false;
+  const dx = e.clientX - sx, dy = e.clientY - sy;
+  if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5){
+    swiped = true;
+    setTimeout(() => { swiped = false; }, 350);
+    go(dx < 0 ? 1 : -1);
+  }
+});
+book.addEventListener('pointercancel', () => { tracking = false; });
+
+btnNext.addEventListener('click', () => go(1));
+btnPrev.addEventListener('click', () => go(-1));
+
+document.addEventListener('keydown', e => {
+  if (e.altKey || e.ctrlKey || e.metaKey) return;
+  const onControl = e.target.closest && e.target.closest('button, a');
+  switch (e.key){
+    case 'ArrowRight': case 'PageDown': e.preventDefault(); go(1); break;
+    case 'ArrowLeft':  case 'PageUp':   e.preventDefault(); go(-1); break;
+    case 'Home': e.preventDefault(); goTo(0); break;
+    case 'End':  e.preventDefault(); goTo(max); break;
+    case ' ':     if (!onControl){ e.preventDefault(); go(1); } break;
+    case 'Enter': if (e.target === stage){ e.preventDefault(); go(1); } break;
+  }
+});
+
+let resizeTimer;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => {
+    const next = decideMode();
+    if (next !== mode){
+      const page = pageOfState(s);
+      clearInterval(cascade);
+      mode = next;
+      body.dataset.mode = mode;
+      book.classList.add('no-anim');
+      build();
+      s = stateOfPage(page);
+      apply(false);
+      requestAnimationFrame(() => requestAnimationFrame(() => book.classList.remove('no-anim')));
+    } else {
+      fitAll();
+    }
+  }, 150);
+});
+
+/* ============ Inicio ============ */
+mode = decideMode();
+body.dataset.mode = mode;
+book.classList.add('no-anim');
+build();
+s = 0;
+apply(false);
+requestAnimationFrame(() => requestAnimationFrame(() => book.classList.remove('no-anim')));
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitAll);
+window.addEventListener('load', fitAll);
+})();
+</script>
+</body>
+</html>
